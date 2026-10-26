@@ -34,3 +34,4 @@ src/receptionist/main.py
 src/receptionist/tts.py
 src/receptionist/tools.py
 
+tests/

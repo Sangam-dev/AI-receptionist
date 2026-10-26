@@ -102,3 +102,15 @@ class AssistantState(str, Enum):
 @dataclass(frozen=True)
 class AssistantStateChanged(BaseEvent):
     state: AssistantState = AssistantState.IDLE
+
+
+# bus
+
+
+@dataclass(frozen=True)
+class HandlerFailed(BaseEvent):
+    # emitted by the EventBus when a handler raises
+    handler: str = ""
+    failed_event_id: str = ""
+    failed_event_type: str = ""
+    error: str = ""
