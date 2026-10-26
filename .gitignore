@@ -1,0 +1,36 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local data and models
+*.db
+*.onnx
+*.bin
+
+# Notes and planning docs (not part of the product)
+plan/
+event_driven_architecture/
+
+# Notebooks and tool caches
+*.ipynb
+.freebuff/
+
+# Old/experimental files (keep only api/, core/, skills/)
+src/receptionist/backend.py
+src/receptionist/database.py
+src/receptionist/main.py
+src/receptionist/tts.py
+src/receptionist/tools.py
+
