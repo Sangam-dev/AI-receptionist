@@ -41,7 +41,11 @@ class EventBus:
                 f"{getattr(handler, '__name__', handler)} must be async. Got: {type(handler)}"
             )
         self._handlers[event_type].append(handler)
-        logger.debug("Subscribed %s → %s", event_type.__name__, getattr(handler, "__name__", handler))
+        logger.debug(
+            "Subscribed %s -> %s",
+            event_type.__name__,
+            getattr(handler, "__name__", handler),
+        )
 
     def unsubscribe(self, event_type: type[E], handler: Handler[E]) -> None:
         handlers = self._handlers.get(event_type, [])
@@ -50,6 +54,14 @@ class EventBus:
 
     def handler_count(self, event_type: type) -> int:
         return len(self._handlers.get(event_type, []))
+
+    def spawn(self, coro, name: str | None = None) -> asyncio.Task:
+        if self._closed:
+            raise RuntimeError("bus is closed")
+        task = asyncio.create_task(coro, name=name)
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+        return task
 
     def register_handlers(self, obj: Any) -> None:
         for attr_name in dir(obj):
@@ -79,7 +91,7 @@ class EventBus:
             return
 
         logger.debug(
-            "emit %s [%s] → %d handler(s)",
+            "emit %s [%s] -> %d handler(s)",
             event_type.__name__,
             event.event_id[:8],
             len(handlers),

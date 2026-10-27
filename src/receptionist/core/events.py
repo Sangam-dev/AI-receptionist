@@ -12,6 +12,7 @@ class BaseEvent:
     occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     session_id: str = "default"
     turn_id: str = ""
+    causation_id: str | None = None
 
 
 # input
@@ -40,6 +41,7 @@ class UserInterrupted(BaseEvent):
 @dataclass(frozen=True)
 class PartialResponse(BaseEvent):
     text: str = ""
+    index: int = 0
     done: bool = False
 
 
@@ -54,6 +56,8 @@ class ResponseReady(BaseEvent):
 @dataclass(frozen=True)
 class SentenceReady(BaseEvent):
     text: str = ""
+    index: int = 0
+    done: bool = False  # final marker of a turn (possibly empty text)
 
 
 @dataclass(frozen=True)
