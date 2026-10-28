@@ -35,3 +35,8 @@ src/receptionist/tts.py
 src/receptionist/tools.py
 
 tests/
+
+commit.md
+STUDY.md
+
+test.py

@@ -20,6 +20,8 @@ class Settings:
     session_ttl_s: float = 1800.0
     demo_token: str = "dev-token"
     force_fake: bool = False
+    db_api_base_url: str = "http://127.0.0.1:8000"
+    tts_speed: float = 1.0
 
     @property
     def tts_available(self) -> bool:
@@ -48,4 +50,6 @@ def load_settings(env_file: str | Path | None = None) -> Settings:
         session_ttl_s=float(os.getenv("SESSION_TTL_S", "1800")),
         demo_token=os.getenv("DEMO_TOKEN", "dev-token"),
         force_fake=os.getenv("RECEPTIONIST_FAKE") == "1",
+        db_api_base_url=os.getenv("DB_API_BASE_URL", "http://127.0.0.1:8000"),
+        tts_speed=float(os.getenv("TTS_SPEED", "1.0")),
     )
