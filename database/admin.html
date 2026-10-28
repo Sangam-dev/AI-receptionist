@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinic Admin</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #1c2733; }
+  header { background: #14324f; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  nav { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  nav button { background: transparent; color: #cfe0ef; border: 1px solid #3d5a75; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  nav button.active { background: #fff; color: #14324f; border-color: #fff; font-weight: 600; }
+  main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+  section { display: none; }
+  section.active { display: block; }
+  .card { background: #fff; border: 1px solid #dde4ea; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e7ecf1; vertical-align: top; }
+  th { color: #5b6b7b; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  tr:hover td { background: #f7fafc; }
+  form { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #5b6b7b; }
+  input, select { padding: 7px 9px; border: 1px solid #c6d2dd; border-radius: 6px; font-size: 14px; background: #fff; }
+  button.act { padding: 7px 14px; border: 0; border-radius: 6px; background: #14324f; color: #fff; cursor: pointer; font-size: 14px; }
+  button.act.secondary { background: #5b7c9b; }
+  button.danger { background: #b3402e; }
+  button.small { padding: 4px 10px; font-size: 12px; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.confirmed { background: #e2f3e6; color: #1d6b30; }
+  .pill.cancelled { background: #fbe6e2; color: #9c2f1f; }
+  .pill.completed { background: #e3ebfb; color: #274f9e; }
+  .pill.pending { background: #fdf3dc; color: #8a6116; }
+  .pill.sent { background: #e2f3e6; color: #1d6b30; }
+  .pill.failed { background: #fbe6e2; color: #9c2f1f; }
+  .pill.available { background: #e2f3e6; color: #1d6b30; }
+  .pill.on_leave, .pill.unavailable { background: #fdf3dc; color: #8a6116; }
+  .muted { color: #7c8b99; }
+  .error { color: #9c2f1f; font-size: 13px; margin-top: 8px; min-height: 16px; }
+  .slots { margin-top: 10px; font-size: 14px; }
+  .slots span { display: inline-block; background: #eef3f8; border: 1px solid #d5e0ea; border-radius: 6px; padding: 3px 9px; margin: 3px 4px 0 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Clinic Admin</h1>
+  <nav>
+    <button data-tab="doctors" class="active">Doctors</button>
+    <button data-tab="appointments">Appointments</button>
+    <button data-tab="patients">Patients</button>
+    <button data-tab="calls">Calls</button>
+    <button data-tab="reminders">Reminders</button>
+  </nav>
+</header>
+<main>
+  <section id="tab-doctors" class="active">
+    <div class="card">
+      <h2>Doctors</h2>
+      <table><thead><tr><th>Name</th><th>Department</th><th>Fee</th><th>Availability</th><th>Working hours</th></tr></thead>
+      <tbody id="doctor-rows"></tbody></table>
+      <div class="error" id="doctor-error"></div>
+    </div>
+    <div class="card">
+      <h2>Add doctor</h2>
+      <form id="add-doctor">
+        <label>Name <input id="nd-name" required placeholder="Dr. Full Name"></label>
+        <label>Department <select id="nd-dept"></select></label>
+        <label>Consultation fee <input id="nd-fee" type="number" min="0" step="0.01" required placeholder="800"></label>
+        <button class="act" type="submit">Add</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Working hours</h2>
+      <form id="add-schedule">
+        <label>Doctor <select id="ns-doctor"></select></label>
+        <label>Day <select id="ns-day">
+          <option value="0">Monday</option><option value="1">Tuesday</option>
+          <option value="2">Wednesday</option><option value="3">Thursday</option>
+          <option value="4">Friday</option><option value="5">Saturday</option>
+          <option value="6">Sunday</option>
+        </select></label>
+        <label>From <input id="ns-start" type="time" value="09:00" required></label>
+        <label>To <input id="ns-end" type="time" value="17:00" required></label>
+        <label>Slot minutes <input id="ns-slot" type="number" value="30" min="5" max="120" required></label>
+        <button class="act" type="submit">Save</button>
+      </form>
+      <div class="error" id="schedule-error"></div>
+    </div>
+    <div class="card">
+      <h2>Free slots</h2>
+      <form id="check-slots">
+        <label>Doctor <select id="cs-doctor"></select></label>
+        <label>Date <input id="cs-day" type="date" required></label>
+        <button class="act secondary" type="submit">Check</button>
+      </form>
+      <div class="slots" id="slot-result"></div>
+    </div>
+  </section>
+
+  <section id="tab-appointments">
+    <div class="card">
+      <h2>Appointments</h2>
+      <form id="appt-filter" style="margin-bottom: 12px;">
+        <label>Date <input id="af-day" type="date"></label>
+        <label>Status <select id="af-status">
+          <option value="">all</option><option value="confirmed">confirmed</option>
+          <option value="cancelled">cancelled</option><option value="completed">completed</option>
+        </select></label>
+        <button class="act secondary" type="submit">Filter</button>
+        <button class="act secondary" type="button" id="af-clear">Show all</button>
+      </form>
+      <table><thead><tr><th>When</th><th>Patient</th><th>Doctor</th><th>Reason</th><th>Status</th><th></th></tr></thead>
+      <tbody id="appointment-rows"></tbody></table>
+      <div class="error" id="appointment-error"></div>
+    </div>
+  </section>
+
+  <section id="tab-patients">
+    <div class="card">
+      <h2>Patients</h2>
+      <form id="patient-search" style="margin-bottom: 12px;">
+        <label>Phone number <input id="ps-phone" placeholder="+91-..."></label>
+        <button class="act secondary" type="submit">Search</button>
+        <button class="act secondary" type="button" id="ps-clear">Show all</button>
+      </form>
+      <table><thead><tr><th>Name</th><th>Phone</th><th>Registered</th></tr></thead>
+      <tbody id="patient-rows"></tbody></table>
+    </div>
+  </section>
+
+  <section id="tab-calls">
+    <div class="card">
+      <h2>Call log</h2>
+      <table><thead><tr><th>Started</th><th>Caller</th><th>Patient</th><th>Outcome</th><th>Summary</th></tr></thead>
+      <tbody id="call-rows"></tbody></table>
+    </div>
+  </section>
+
+  <section id="tab-reminders">
+    <div class="card">
+      <h2>Reminders</h2>
+      <table><thead><tr><th>Appointment</th><th>Scheduled</th><th>Method</th><th>Status</th><th></th></tr></thead>
+      <tbody id="reminder-rows"></tbody></table>
+      <div class="error" id="reminder-error"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(typeof data?.detail === "string" ? data.detail : `request failed (${res.status})`);
+  return data;
+}
+
+function fmtTime(iso) {
+  if (!iso) return "—";
+  return iso.replace("T", " ").slice(0, 16);
+}
+
+function pill(value) {
+  return value ? `<span class="pill ${value}">${value}</span>` : "—";
+}
+
+function optionList(items, valueKey, labelKey) {
+  return items.map((it) => `<option value="${it[valueKey]}">${it[labelKey]}</option>`).join("");
+}
+
+let doctors = [], departments = [], schedules = [];
+
+async function loadDoctors() {
+  [doctors, departments, schedules] = await Promise.all([
+    api("/doctors"), api("/departments"), api("/schedules"),
+  ]);
+  const byDoctor = {};
+  for (const s of schedules) {
+    (byDoctor[s.doctor_id] = byDoctor[s.doctor_id] || []).push(
+      `${DAY_NAMES[s.day_of_week]} ${s.start_time.slice(0, 5)}-${s.end_time.slice(0, 5)} (${s.slot_minutes}m)`
+    );
+  }
+  $("doctor-rows").innerHTML = doctors.map((d) => `
+    <tr>
+      <td>${d.name}</td>
+      <td>${d.department ? d.department.name : "—"}</td>
+      <td>${d.consultation_fee}</td>
+      <td><select data-doctor="${d.doctor_id}" class="availability">
+        ${["available", "on_leave", "unavailable"].map((s) =>
+          `<option value="${s}" ${d.availability === s ? "selected" : ""}>${s.replace("_", " ")}</option>`).join("")}
+      </select></td>
+      <td>${(byDoctor[d.doctor_id] || []).join("<br>") || '<span class="muted">none set</span>'}</td>
+    </tr>`).join("");
+  document.querySelectorAll(".availability").forEach((sel) =>
+    sel.onchange = async () => {
+      try {
+        await api(`/doctors/${sel.dataset.doctor}`, {
+          method: "PATCH", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ availability: sel.value }),
+        });
+        $("doctor-error").textContent = "";
+      } catch (err) { $("doctor-error").textContent = err.message; loadDoctors(); }
+    });
+  const doctorOptions = optionList(doctors, "doctor_id", "name");
+  $("nd-dept").innerHTML = optionList(departments, "department_id", "name");
+  $("ns-doctor").innerHTML = doctorOptions;
+  $("cs-doctor").innerHTML = doctorOptions;
+}
+
+$("add-doctor").onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    await api("/doctors", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: $("nd-name").value,
+        department_id: Number($("nd-dept").value),
+        consultation_fee: $("nd-fee").value,
+      }),
+    });
+    $("nd-name").value = ""; $("nd-fee").value = "";
+    $("doctor-error").textContent = "";
+    loadDoctors();
+  } catch (err) { $("doctor-error").textContent = err.message; }
+};
+
+$("add-schedule").onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    await api(`/doctors/${$("ns-doctor").value}/schedules`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        day_of_week: Number($("ns-day").value),
+        start_time: $("ns-start").value,
+        end_time: $("ns-end").value,
+        slot_minutes: Number($("ns-slot").value),
+      }),
+    });
+    $("schedule-error").textContent = "";
+    loadDoctors();
+  } catch (err) { $("schedule-error").textContent = err.message; }
+};
+
+$("check-slots").onsubmit = async (e) => {
+  e.preventDefault();
+  $("slot-result").textContent = "checking…";
+  try {
+    const data = await api(`/doctors/${$("cs-doctor").value}/availability?day=${$("cs-day").value}`);
+    $("slot-result").innerHTML = data.available_times.length
+      ? data.available_times.map((t) => `<span>${t}</span>`).join("")
+      : '<span class="muted">no free slots that day</span>';
+  } catch (err) { $("slot-result").textContent = err.message; }
+};
+
+async function loadAppointments() {
+  const params = new URLSearchParams();
+  if ($("af-day").value) params.set("day", $("af-day").value);
+  if ($("af-status").value) params.set("status", $("af-status").value);
+  const rows = await api(`/appointments?${params}`);
+  $("appointment-rows").innerHTML = rows.map((a) => `
+    <tr>
+      <td>${fmtTime(a.appointment_at)}</td>
+      <td>${a.patient_name ?? a.patient_id}</td>
+      <td>${a.doctor_name ?? a.doctor_id}</td>
+      <td>${a.reason || "—"}</td>
+      <td>${pill(a.status)}</td>
+      <td>${a.status === "confirmed" ? `
+        <button class="act small" onclick="setAppointment(${a.appointment_id}, 'completed')">Complete</button>
+        <button class="act danger small" onclick="setAppointment(${a.appointment_id}, 'cancelled')">Cancel</button>` : ""}
+      </td>
+    </tr>`).join("") || '<tr><td colspan="6" class="muted">no appointments</td></tr>';
+}
+
+window.setAppointment = async (id, status) => {
+  try {
+    await api(`/appointments/${id}`, {
+      method: "PATCH", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    $("appointment-error").textContent = "";
+    loadAppointments();
+  } catch (err) { $("appointment-error").textContent = err.message; }
+};
+
+$("appt-filter").onsubmit = (e) => { e.preventDefault(); loadAppointments(); };
+$("af-clear").onclick = () => { $("af-day").value = ""; $("af-status").value = ""; loadAppointments(); };
+
+async function loadPatients(phone = "") {
+  const rows = phone
+    ? [await api(`/patients/search/by-phone?phone_number=${encodeURIComponent(phone)}`)].filter(Boolean)
+    : await api("/patients");
+  $("patient-rows").innerHTML = rows.map((p) => `
+    <tr><td>${p.full_name}</td><td>${p.phone_number}</td><td>${fmtTime(p.registered_at)}</td></tr>`).join("")
+    || '<tr><td colspan="3" class="muted">no patients found</td></tr>';
+}
+
+$("patient-search").onsubmit = (e) => { e.preventDefault(); loadPatients($("ps-phone").value.trim()); };
+$("ps-clear").onclick = () => { $("ps-phone").value = ""; loadPatients(); };
+
+async function loadCalls() {
+  const rows = await api("/calls");
+  $("call-rows").innerHTML = rows.map((c) => `
+    <tr>
+      <td>${fmtTime(c.started_at)}</td>
+      <td>${c.caller_phone_number}</td>
+      <td>${c.patient_id ?? "—"}</td>
+      <td>${c.outcome ? `<span class="pill completed">${c.outcome}</span>` : "—"}</td>
+      <td>${c.summary || "—"}</td>
+    </tr>`).join("") || '<tr><td colspan="5" class="muted">no calls yet</td></tr>';
+}
+
+async function loadReminders() {
+  const rows = await api("/reminders");
+  $("reminder-rows").innerHTML = rows.map((r) => `
+    <tr>
+      <td>#${r.appointment_id}</td>
+      <td>${fmtTime(r.scheduled_at)}</td>
+      <td>${r.method}</td>
+      <td>${pill(r.status)}</td>
+      <td>${r.status === "pending" ? `
+        <button class="act small" onclick="setReminder(${r.reminder_id}, 'sent')">Mark sent</button>
+        <button class="act danger small" onclick="setReminder(${r.reminder_id}, 'failed')">Mark failed</button>` : ""}
+      </td>
+    </tr>`).join("") || '<tr><td colspan="5" class="muted">no reminders</td></tr>';
+}
+
+window.setReminder = async (id, status) => {
+  try {
+    await api(`/reminders/${id}`, {
+      method: "PATCH", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ status, sent_at: status === "sent" ? new Date().toISOString() : null }),
+    });
+    $("reminder-error").textContent = "";
+    loadReminders();
+  } catch (err) { $("reminder-error").textContent = err.message; }
+};
+
+const loaders = {
+  doctors: loadDoctors,
+  appointments: loadAppointments,
+  patients: () => loadPatients(),
+  calls: loadCalls,
+  reminders: loadReminders,
+};
+
+document.querySelectorAll("nav button").forEach((btn) => {
+  btn.onclick = () => {
+    document.querySelectorAll("nav button").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll("section").forEach((s) => s.classList.remove("active"));
+    btn.classList.add("active");
+    $(`tab-${btn.dataset.tab}`).classList.add("active");
+    loaders[btn.dataset.tab]();
+  };
+});
+
+$("af-day").value = new Date().toISOString().slice(0, 10);
+loadDoctors().catch((err) => { $("doctor-error").textContent = err.message; });
+loadAppointments().catch(() => {});
+</script>
+</body>
+</html>
